@@ -16,7 +16,7 @@ const SharedChatPage = () => {
 
   // 🔥 FETCH DATA
   useEffect(() => {
-    fetch(`http://localhost:5000/api/share/${id}`)
+    fetch(`https://ai-chat-backend-5-5716.onrender.com/api/share/${id}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.messages) {

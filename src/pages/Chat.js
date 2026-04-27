@@ -8,6 +8,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { darcula } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 function Chat() {
+  const BASE_URL = "https://ai-chat-backend-5-5716.onrender.com";
   const [shareLink, setShareLink] = useState("");
   const [showShareModal, setShowShareModal] = useState(false);
   const messagesEndRef = useRef(null);
@@ -122,7 +123,7 @@ function Chat() {
     const savedActiveId = localStorage.getItem("activeChatId");
 
     axios
-      .get(`http://localhost:5000/api/chat/${storedUser}`)
+      .get(`${BASE_URL}/api/chat/${storedUser}`)
       .then((res) => {
         const chatsData = res.data;
         setChats(chatsData);
@@ -211,7 +212,7 @@ function Chat() {
 
   const handleMove = async (chatId, folder) => {
     try {
-      await axios.put("http://localhost:5000/api/chat/move-folder", {
+      await axios.put(`${BASE_URL}/api/chat/move-folder`, {
         chatId,
         folder,
       });
@@ -275,7 +276,7 @@ function Chat() {
     let stopped = false; // 🔥 IMPORTANT
 
     try {
-      const response = await fetch("http://localhost:5000/api/chat", {
+      const response = await fetch(`${BASE_URL}/api/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -360,7 +361,7 @@ function Chat() {
 
       if (!activeChatId) {
         try {
-          const res = await axios.post("http://localhost:5000/api/chat/title", {
+          const res = await axios.post(`${BASE_URL}/api/chat/title`, {
             message,
           });
           chatTitle = res.data.title;
@@ -454,7 +455,7 @@ function Chat() {
     controllerRef.current = controller;
 
     try {
-      const response = await fetch("http://localhost:5000/api/chat", {
+      const response = await fetch(`${BASE_URL}/api/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -543,7 +544,7 @@ function Chat() {
     // 🔥 final delete
     deleteTimerRef.current = setTimeout(async () => {
       try {
-        await fetch(`http://localhost:5000/api/chat/${chatId}`, {
+        await fetch(`${BASE_URL}/api/chat/${chatId}`, {
           method: "DELETE",
         });
 
@@ -592,7 +593,7 @@ function Chat() {
 
   const handleRename = async (chatId) => {
     try {
-      await axios.put("http://localhost:5000/api/chat/rename", {
+      await axios.put(`${BASE_URL}/api/chat/rename`, {
         chatId,
         title: editTitle,
       });
@@ -609,9 +610,7 @@ function Chat() {
 
   const handlePin = async (chatId) => {
     try {
-      const res = await axios.put(
-        `http://localhost:5000/api/chat/pin/${chatId}`,
-      );
+      const res = await axios.put(`${BASE_URL}/api/chat/pin/${chatId}`);
 
       setChats((prev) => prev.map((c) => (c._id === chatId ? res.data : c)));
     } catch (err) {
@@ -722,7 +721,7 @@ function Chat() {
     setIsTyping(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/chat", {
+      const response = await fetch(`${BASE_URL}/api/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1167,8 +1166,7 @@ function Chat() {
                   localStorage.removeItem("activeChatId");
 
                   // 🔥 backend logout call
-                  window.location.href =
-                    "http://localhost:5000/api/auth/logout";
+                  window.location.href = `${BASE_URL}/api/auth/logout`;
                 }}
                 className="bg-red-500 px-4 py-3 rounded-lg text-md"
               >
@@ -1177,8 +1175,7 @@ function Chat() {
             ) : (
               <button
                 onClick={() =>
-                  (window.location.href =
-                    "http://localhost:5000/api/auth/google")
+                  (window.location.href = `${BASE_URL}/api/auth/google`)
                 }
                 className="bg-green-500 px-4 py-3 rounded-lg text-md"
               >
