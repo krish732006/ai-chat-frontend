@@ -429,15 +429,15 @@ function Chat() {
 
       const data = await res.json();
 
-      // 🔥 IMPORTANT CHANGE
-      const link = `https://ai-chat-backend-5-5716.onrender.com/api/share/${data.shareId}`;
+      // ✅ FRONTEND LINK (IMPORTANT)
+      const link = `https://ai-chat-frontend-theta.vercel.app/share/${data.shareId}`;
 
       setShareLink(link);
     } catch (err) {
       console.log(err);
     }
   };
-  
+
   const handleStop = () => {
     if (controllerRef.current) {
       controllerRef.current.abort();
