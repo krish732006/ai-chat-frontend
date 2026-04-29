@@ -1499,7 +1499,7 @@ function Chat() {
 
               {/* 📄 File Upload */}
             {/* <input type="file" onChange={handleFile} className="text-white" />  */}
-            <label className="cursor-pointer text-xl hover:scale-110 transition">
+            <label className="cursor-pointer">
               📸
               <input
                 type="file"
@@ -1509,7 +1509,7 @@ function Chat() {
               />
             </label>
 
-            <label className="cursor-pointer text-xl hover:scale-110 transition">
+            <label className="cursor-pointer">
               📄
               <input type="file" onChange={handleFile} hidden />
             </label>
@@ -1538,7 +1538,7 @@ function Chat() {
                   sendMessage();
                 }
               }}
-              className={`p-3 rounded-full text-white transition
+              className={`absolute top-1/2 right-3 -translate-y-1/2 sm:top-auto sm:bottom-4 sm:right-6 sm:translate-y-0 p-3 sm:p-4 rounded-full text-white transition
                         ${
                           isTyping
                             ? "bg-red-500 hover:bg-red-600"
