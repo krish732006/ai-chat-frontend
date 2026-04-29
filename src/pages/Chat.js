@@ -10,7 +10,13 @@ import { darcula } from "react-syntax-highlighter/dist/esm/styles/prism";
 function Chat() {
   const BASE_URL = "https://ai-chat-backend-5-5716.onrender.com";
   const [shareLink, setShareLink] = useState("");
+  const [isGenerated, setIsGenerated] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const handleOpenShare = () => {
+    setShareLink("");
+    setIsGenerated(false);
+    setShowShareModal(true);
+  };
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -62,6 +68,8 @@ function Chat() {
 
   const [unreadCounts, setUnreadCounts] = useState({});
 
+  const [uploadLoading, setUploadLoading] = useState(false);
+
   // const normalize = (name) => name.toLowerCase();
   const formatFolder = (name) => name.charAt(0).toUpperCase() + name.slice(1);
 
@@ -83,6 +91,15 @@ function Chat() {
 
   //   setIsRegenerate(last.sender === "ai");
   // }, [messages]);
+
+  useEffect(() => {
+    const savedLink = localStorage.getItem("shareLink");
+
+    if (savedLink) {
+      setShareLink(savedLink);
+      setIsGenerated(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (isAtBottom) {
@@ -306,31 +323,36 @@ function Chat() {
       ]);
 
       try {
+        let buffer = "";
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value);
+          buffer += decoder.decode(value);
 
-          if (chunk.includes("__CHAT_ID__")) {
-            const parts = chunk.split("__CHAT_ID__:");
-            const textPart = parts[0];
-            const chatIdPart = parts[1];
+          let parts = buffer.split("__CHAT_ID__:");
 
-            aiText += textPart;
+          // last part incomplete hoi shake
+          buffer = parts.pop();
+
+          for (let part of parts) {
+            aiText += part;
             updateLastMessage(aiText);
-            setPartialAI(aiText); // 🔥 MUST
 
-            if (chatIdPart) {
-              const newChatId = chatIdPart.trim();
-              currentChatId = newChatId;
-              setActiveChatId(newChatId);
-              localStorage.setItem("activeChatId", newChatId);
+            const idMatch = buffer.match(/^[a-f\d]{24}/);
+            if (idMatch) {
+              currentChatId = idMatch[0];
+              setActiveChatId(currentChatId);
+              localStorage.setItem("activeChatId", currentChatId);
             }
-          } else {
-            aiText += chunk;
+          }
+
+          if (!buffer.includes("__CHAT_ID__")) {
+            aiText += buffer;
             updateLastMessage(aiText);
-            setPartialAI(aiText); // 🔥 MUST
+            setPartialAI(aiText);
+            buffer = "";
           }
         }
 
@@ -366,12 +388,24 @@ function Chat() {
           });
           chatTitle = res.data.title;
         } catch (err) {
+          console.log("Title failed");
+          chatTitle = "New Chat"; // fallback
           console.log(err);
         }
       }
 
       // 🔥 FINAL SAVE (ONLY IF NOT STOPPED)
-      const finalMessages = [...newMessages, { text: aiText, sender: "ai" }];
+      const finalMessages = [
+        ...newMessages,
+        {
+          text: aiText,
+          sender: "ai",
+          time: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
+      ];
 
       setChats((prev) => {
         const id = currentChatId;
@@ -400,6 +434,10 @@ function Chat() {
 
       // 🔥 COMPLETE → reset
       setPartialAI("");
+
+      await axios.get(`${BASE_URL}/api/chat/${userName}`).then((res) => {
+        setChats(res.data);
+      });
     } catch (error) {
       if (error.name !== "AbortError") {
         console.log(error);
@@ -408,6 +446,54 @@ function Chat() {
     } finally {
       setLoading(false);
       setIsTyping(false);
+    }
+  };
+
+  const handleImage = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      setUploadLoading(true);
+
+      const res = await axios.post(`${BASE_URL}/api/ai/image`, formData);
+
+      setMessages((prev) => [
+        ...prev,
+        { text: "📸 Image uploaded", sender: "user" },
+        { text: res.data.result, sender: "ai" },
+      ]);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const handleFile = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      setUploadLoading(true);
+
+      const res = await axios.post(`${BASE_URL}/api/ai/file`, formData);
+
+      setMessages((prev) => [
+        ...prev,
+        { text: `📄 ${file.name}`, sender: "user" },
+        { text: res.data.result, sender: "ai" },
+      ]);
+    } catch (err) {
+      console.log(err);
+    } finally {
+      setUploadLoading(false);
     }
   };
 
@@ -434,6 +520,9 @@ function Chat() {
       const link = `https://ai-chat-frontend-theta.vercel.app/share/${data.shareId}`;
 
       setShareLink(link);
+      setIsGenerated(true);
+
+      localStorage.setItem("shareLink", link);
     } catch (err) {
       console.log(err);
     }
@@ -1144,7 +1233,7 @@ function Chat() {
           <h1 className="text-lg md:text-2xl font-bold">AI Chat 🚀</h1>
 
           <button
-            onClick={() => setShowShareModal(true)}
+            onClick={handleOpenShare}
             className="flex items-center gap-2 text-gray-300 hover:text-white"
           >
             🔗 Share
@@ -1395,7 +1484,36 @@ function Chat() {
         {/* INPUT */}
         {/* INPUT */}
         <div className="p-4 bg-[#1e293b] border-t border-gray-700">
-          <div className="w-full relative mt-3 px-2">
+          {uploadLoading && (
+            <p className="text-xs text-gray-400">Uploading...</p>
+          )}
+          {/* <div className="w-full relative mt-3 px-2"> */}
+          <div className="flex items-center gap-3 relative">
+            {/* 📸 Image Upload
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImage}
+                className="text-white"
+              />
+
+              {/* 📄 File Upload */}
+            {/* <input type="file" onChange={handleFile} className="text-white" />  */}
+            <label className="cursor-pointer text-xl hover:scale-110 transition">
+              📸
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImage}
+                hidden
+              />
+            </label>
+
+            <label className="cursor-pointer text-xl hover:scale-110 transition">
+              📄
+              <input type="file" onChange={handleFile} hidden />
+            </label>
+
             <textarea
               rows="1"
               placeholder="Ask anything..."
@@ -1407,7 +1525,7 @@ function Chat() {
                   sendMessage();
                 }
               }}
-              className="w-full pr-16 sm:pr-14 p-3 sm:p-6 rounded-xl bg-[#0f172a] border border-gray-600 text-base sm:text-xl resize-none"
+              className="flex-1 p-3 rounded-xl bg-[#0f172a] border border-gray-600 resize-none"
             />
 
             <button
@@ -1420,7 +1538,7 @@ function Chat() {
                   sendMessage();
                 }
               }}
-              className={`absolute top-1/2 right-3 -translate-y-1/2 sm:top-auto sm:bottom-4 sm:right-6 sm:translate-y-0 p-3 sm:p-4 rounded-full text-white transition
+              className={`p-3 rounded-full text-white transition
                         ${
                           isTyping
                             ? "bg-red-500 hover:bg-red-600"
@@ -1504,7 +1622,12 @@ function Chat() {
           >
             {/* ❌ Close */}
             <button
-              onClick={() => setShowShareModal(false)}
+              onClick={() => {
+                localStorage.removeItem("shareLink"); // 🔥 clear old
+                setShareLink("");
+                setIsGenerated(false);
+                setShowShareModal(false);
+              }}
               className="absolute top-4 right-4 text-gray-400 hover:text-white text-xl"
             >
               ✖
@@ -1566,65 +1689,67 @@ function Chat() {
             )}
 
             {/* 🌐 SHARE OPTIONS */}
-            <div className="flex justify-around mt-6">
-              {/* 🔗 COPY */}
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(shareLink);
-                  setCopyToast("Link copied");
+            {isGenerated && (
+              <div className="flex justify-around mt-6">
+                {/* 🔗 COPY */}
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(shareLink);
+                    setCopyToast("Link copied");
 
-                  setTimeout(() => {
-                    setCopiedIndex(null);
-                    setCopyToast(null);
-                  }, 1500);
-                }}
-                className="flex flex-col items-center"
-              >
-                🔗
-                <span className="text-xs mt-1">Copy</span>
-              </button>
+                    setTimeout(() => {
+                      setCopiedIndex(null);
+                      setCopyToast(null);
+                    }, 1500);
+                  }}
+                  className="flex flex-col items-center"
+                >
+                  🔗
+                  <span className="text-xs mt-1">Copy</span>
+                </button>
 
-              {/* ❌ X (Twitter) */}
-              <button
-                onClick={() => {
-                  window.open(
-                    `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}`,
-                    "_blank",
-                  );
-                }}
-                className="flex flex-col items-center"
-              >
-                ✖<span className="text-xs mt-1">X</span>
-              </button>
+                {/* ❌ X (Twitter) */}
+                <button
+                  onClick={() => {
+                    window.open(
+                      `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}`,
+                      "_blank",
+                    );
+                  }}
+                  className="flex flex-col items-center"
+                >
+                  ✖<span className="text-xs mt-1">X</span>
+                </button>
 
-              {/* 💼 LinkedIn */}
-              <button
-                onClick={() => {
-                  window.open(
-                    `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareLink)}`,
-                    "_blank",
-                  );
-                }}
-                className="flex flex-col items-center"
-              >
-                💼
-                <span className="text-xs mt-1">LinkedIn</span>
-              </button>
+                {/* 💼 LinkedIn */}
+                <button
+                  onClick={() => {
+                    window.open(
+                      `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareLink)}`,
+                      "_blank",
+                    );
+                  }}
+                  className="flex flex-col items-center"
+                >
+                  💼
+                  <span className="text-xs mt-1">LinkedIn</span>
+                </button>
 
-              {/* 👽 Reddit */}
-              <button
-                onClick={() => {
-                  window.open(
-                    `https://www.reddit.com/submit?url=${encodeURIComponent(shareLink)}`,
-                    "_blank",
-                  );
-                }}
-                className="flex flex-col items-center"
-              >
-                👽
-                <span className="text-xs mt-1">Reddit</span>
-              </button>
-            </div>
+                {/* 👽 Reddit */}
+                <button
+                  onClick={() => {
+                    window.open(
+                      `https://www.reddit.com/submit?url=${encodeURIComponent(shareLink)}`,
+                      "_blank",
+                    );
+                  }}
+                  className="flex flex-col items-center"
+                >
+                  👽
+                  <span className="text-xs mt-1">Reddit</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
