@@ -459,15 +459,17 @@ function Chat() {
     try {
       setUploadLoading(true);
 
-      const res = await axios.post(`${BASE_URL}/api/ai/image`, formData);
+      const res = await axios.post(`${BASE_URL}/api/ai/image`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
-      setMessages((prev) => [
-        ...prev,
-        { text: "📸 Image uploaded", sender: "user" },
-        { text: res.data.result, sender: "ai" },
-      ]);
+      const aiReply = res.data.result;
+
+      setMessages((prev) => [...prev, { text: aiReply, sender: "ai" }]);
     } catch (err) {
-      console.log(err);
+      console.error(err);
     } finally {
       setUploadLoading(false);
     }
