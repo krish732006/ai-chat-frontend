@@ -459,11 +459,12 @@ function Chat() {
     try {
       setUploadLoading(true);
 
-      const res = await axios.post(`${BASE_URL}/api/ai/image`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const res = await axios.post(`${BASE_URL}/api/ai/image`, formData);
+      //  {
+      // headers: {
+      //   "Content-Type": "multipart/form-data",
+      // },
+      // });
 
       const aiReply = res.data.result;
 
