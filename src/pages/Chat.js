@@ -1525,7 +1525,7 @@ function Chat() {
                   sendMessage();
                 }
               }}
-              className="flex-1 p-3 rounded-xl bg-[#0f172a] border border-gray-600 resize-none"
+              className="flex-1 p-7 rounded-xl bg-[#0f172a] border border-gray-600 resize-none"
             />
 
             <button
