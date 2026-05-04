@@ -173,6 +173,18 @@ function Chat() {
       .catch((err) => console.log(err));
   }, []);
 
+  useEffect(() => {
+    const loadChats = async () => {
+      const res = await axios.get(
+        "https://ai-chat-backend-5-5716.onrender.com/api/chat",
+      );
+
+      setMessages(res.data.messages);
+    };
+
+    loadChats();
+  }, []);
+
   // 🔥 SAVE ACTIVE CHAT
   useEffect(() => {
     if (activeChatId) {
@@ -453,6 +465,18 @@ function Chat() {
     const file = e.target.files[0];
     if (!file) return;
 
+    const imageUrl = URL.createObjectURL(file);
+
+    // ✅ 1. Show image instantly
+    setMessages((prev) => [
+      ...prev,
+      {
+        type: "image",
+        image: imageUrl,
+        sender: "user",
+      },
+    ]);
+
     const formData = new FormData();
     formData.append("image", file);
 
@@ -468,7 +492,14 @@ function Chat() {
 
       const aiReply = res.data.result;
 
-      setMessages((prev) => [...prev, { text: aiReply, sender: "ai" }]);
+      // ✅ 2. Show AI response
+      setMessages((prev) => [
+        ...prev,
+        {
+          text: aiReply,
+          sender: "ai",
+        },
+      ]);
     } catch (err) {
       console.error(err);
     } finally {
@@ -490,8 +521,15 @@ function Chat() {
 
       setMessages((prev) => [
         ...prev,
-        { text: `📄 ${file.name}`, sender: "user" },
-        { text: res.data.result, sender: "ai" },
+        {
+          type: "image",
+          image: res.data.image,
+          sender: "user",
+        },
+        {
+          text: res.data.result,
+          sender: "ai",
+        },
       ]);
     } catch (err) {
       console.log(err);
@@ -1385,7 +1423,17 @@ function Chat() {
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span>{msg.text}</span>
+                        {/* ✅ IMAGE SHOW */}
+                        {msg.type === "image" && (
+                          <img
+                            src={msg.image}
+                            alt="upload"
+                            className="w-40 rounded-lg"
+                          />
+                        )}
+
+                        {/* ✅ TEXT SHOW */}
+                        {msg.text && <span>{msg.text}</span>}
 
                         {/* 🕒 TIME */}
                         <span className="text-[15px] text-gray-400 mt-1 text-right flex justify-end gap-2">
