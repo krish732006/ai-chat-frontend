@@ -511,6 +511,18 @@ function Chat() {
     const file = e.target.files[0];
     if (!file) return;
 
+    const imageUrl = URL.createObjectURL(file);
+
+    // ✅ show image instantly
+    setMessages((prev) => [
+      ...prev,
+      {
+        type: "image",
+        image: imageUrl,
+        sender: "user",
+      },
+    ]);
+
     const formData = new FormData();
     formData.append("file", file);
 
@@ -519,11 +531,12 @@ function Chat() {
 
       const res = await axios.post(`${BASE_URL}/api/ai/file`, formData);
 
+      // 🔥 IMPORTANT FIX
       setMessages((prev) => [
         ...prev,
         {
           type: "image",
-          image: res.data.image,
+          image: res.data.image, // backend base64
           sender: "user",
         },
         {
