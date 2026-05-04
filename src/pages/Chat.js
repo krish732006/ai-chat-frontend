@@ -173,17 +173,17 @@ function Chat() {
       .catch((err) => console.log(err));
   }, []);
 
-  useEffect(() => {
-    const loadChats = async () => {
-      const res = await axios.get(
-        "https://ai-chat-backend-5-5716.onrender.com/api/chat",
-      );
+  // useEffect(() => {
+  //   const loadChats = async () => {
+  //     const res = await axios.get(
+  //       "https://ai-chat-backend-5-5716.onrender.com/api/chat",
+  //     );
 
-      setMessages(res.data.messages);
-    };
+  //     setMessages(res.data.messages);
+  //   };
 
-    loadChats();
-  }, []);
+  //   loadChats();
+  // }, []);
 
   // 🔥 SAVE ACTIVE CHAT
   useEffect(() => {
