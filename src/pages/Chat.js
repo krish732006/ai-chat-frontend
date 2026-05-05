@@ -483,12 +483,14 @@ function Chat() {
     try {
       setUploadLoading(true);
 
-      const res = await axios.post(`${BASE_URL}/api/ai/image`, formData);
-      //  {
-      // headers: {
-      //   "Content-Type": "multipart/form-data",
-      // },
-      // });
+      const token = localStorage.getItem("token");
+
+      const res = await axios.post(`${BASE_URL}/api/ai/image`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`, // 🔥 MUST
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       const aiReply = res.data.result;
 
