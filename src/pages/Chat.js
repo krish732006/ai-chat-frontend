@@ -492,7 +492,7 @@ function Chat() {
         },
       });
 
-      const aiReply = res.data.result;
+      const aiReply = res.data.result || "No response from AI";
 
       // ✅ 2. Show AI response
       setMessages((prev) => [
