@@ -335,36 +335,56 @@ function Chat() {
       ]);
 
       try {
-        let buffer = "";
+        // let buffer = "";
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          buffer += decoder.decode(value);
+          // buffer += decoder.decode(value);
 
-          let parts = buffer.split("__CHAT_ID__:");
+          // let parts = buffer.split("__CHAT_ID__:");
 
-          // last part incomplete hoi shake
-          buffer = parts.pop();
+          // // last part incomplete hoi shake
+          // buffer = parts.pop();
 
-          for (let part of parts) {
-            aiText += part;
+          // for (let part of parts) {
+          //   aiText += part;
+          //   updateLastMessage(aiText);
+
+          //   const idMatch = buffer.match(/^[a-f\d]{24}/);
+          //   if (idMatch) {
+          //     currentChatId = idMatch[0];
+          //     setActiveChatId(currentChatId);
+          //     localStorage.setItem("activeChatId", currentChatId);
+          //   }
+          // }
+
+          // if (!buffer.includes("__CHAT_ID__")) {
+          //   aiText += buffer;
+          //   updateLastMessage(aiText);
+          //   setPartialAI(aiText);
+          //   buffer = "";
+          // }
+
+          const chunk = decoder.decode(value);
+
+          // 🔥 handle chatId
+          if (chunk.includes("__CHAT_ID__:")) {
+            const [textPart, idPart] = chunk.split("__CHAT_ID__:");
+
+            aiText += textPart;
             updateLastMessage(aiText);
 
-            const idMatch = buffer.match(/^[a-f\d]{24}/);
-            if (idMatch) {
-              currentChatId = idMatch[0];
+            if (idPart) {
+              currentChatId = idPart.trim();
               setActiveChatId(currentChatId);
               localStorage.setItem("activeChatId", currentChatId);
             }
-          }
-
-          if (!buffer.includes("__CHAT_ID__")) {
-            aiText += buffer;
+          } else {
+            aiText += chunk;
             updateLastMessage(aiText);
             setPartialAI(aiText);
-            buffer = "";
           }
         }
 
