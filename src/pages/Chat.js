@@ -505,7 +505,11 @@ function Chat() {
     } catch (err) {
       console.error(err);
 
-      const errorMsg = err.response?.data?.error || "Something went wrong ❌";
+      let errorMsg = err.response?.data?.error || "Something went wrong ❌";
+
+      if (err.response?.status === 429) {
+        errorMsg = "⚠️ AI limit reached, try again later";
+      }
 
       setMessages((prev) => [
         ...prev,
