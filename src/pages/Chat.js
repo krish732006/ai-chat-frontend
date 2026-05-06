@@ -335,20 +335,14 @@ function Chat() {
       ]);
 
       try {
-        let buffer = "";
-
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          buffer += decoder.decode(value);
+          const chunk = decoder.decode(value);
 
-          // 🔥 check if full CHAT_ID present
-          if (buffer.includes("__CHAT_ID__:")) {
-            const parts = buffer.split("__CHAT_ID__:");
-
-            const textPart = parts[0];
-            const idPart = parts[1];
+          if (chunk.includes("__CHAT_ID__:")) {
+            const [textPart, idPart] = chunk.split("__CHAT_ID__:");
 
             if (textPart) {
               aiText += textPart;
@@ -360,12 +354,9 @@ function Chat() {
               setActiveChatId(currentChatId);
               localStorage.setItem("activeChatId", currentChatId);
             }
-
-            buffer = ""; // 🔥 clear buffer
           } else {
-            aiText += buffer;
+            aiText += chunk;
             updateLastMessage(aiText);
-            buffer = "";
           }
         }
 
