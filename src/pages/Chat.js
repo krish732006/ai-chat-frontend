@@ -335,31 +335,37 @@ function Chat() {
       ]);
 
       try {
+        let buffer = "";
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value);
+          buffer += decoder.decode(value);
 
-          // 🔥 CHECK CHAT ID
-          if (chunk.includes("__CHAT_ID__")) {
-            const parts = chunk.split("__CHAT_ID__:");
+          // 🔥 check if full CHAT_ID present
+          if (buffer.includes("__CHAT_ID__:")) {
+            const parts = buffer.split("__CHAT_ID__:");
 
-            // text part
-            if (parts[0]) {
-              aiText += parts[0];
+            const textPart = parts[0];
+            const idPart = parts[1];
+
+            if (textPart) {
+              aiText += textPart;
               updateLastMessage(aiText);
             }
 
-            // id part
-            if (parts[1]) {
-              currentChatId = parts[1].trim();
+            if (idPart) {
+              currentChatId = idPart.trim();
               setActiveChatId(currentChatId);
               localStorage.setItem("activeChatId", currentChatId);
             }
+
+            buffer = ""; // 🔥 clear buffer
           } else {
-            aiText += chunk;
+            aiText += buffer;
             updateLastMessage(aiText);
+            buffer = "";
           }
         }
 
