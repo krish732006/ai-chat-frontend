@@ -504,6 +504,16 @@ function Chat() {
       ]);
     } catch (err) {
       console.error(err);
+
+      const errorMsg = err.response?.data?.error || "Something went wrong ❌";
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          text: errorMsg,
+          sender: "ai",
+        },
+      ]);
     } finally {
       setUploadLoading(false);
     }
