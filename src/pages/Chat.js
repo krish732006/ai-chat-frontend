@@ -335,19 +335,21 @@ function Chat() {
       ]);
 
       try {
+        let fullData = "";
+
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
           const chunk = decoder.decode(value);
+          fullData += chunk;
 
-          if (chunk.includes("__CHAT_ID__:")) {
-            const [textPart, idPart] = chunk.split("__CHAT_ID__:");
+          // 🔥 when chatId arrives (last chunk)
+          if (fullData.includes("__CHAT_ID__:")) {
+            const [textPart, idPart] = fullData.split("__CHAT_ID__:");
 
-            if (textPart) {
-              aiText += textPart;
-              updateLastMessage(aiText);
-            }
+            aiText = textPart; // 🔥 full AI text
+            updateLastMessage(aiText);
 
             if (idPart) {
               currentChatId = idPart.trim();
@@ -355,11 +357,11 @@ function Chat() {
               localStorage.setItem("activeChatId", currentChatId);
             }
           } else {
-            aiText += chunk;
+            // 🔥 streaming text update
+            aiText = fullData;
             updateLastMessage(aiText);
           }
         }
-
         // 🔥 ADD THIS BLOCK HERE
         if (!controllerRef.current?.signal.aborted) {
           // 🔥 UNREAD COUNT
